@@ -35,7 +35,7 @@ const registerUser = asyncHandler(async (req, res) => {
 
     if (user) {
         const { id, name, email } = user;
-        res.status(201).json({ _id: id, name, email })
+        res.status(201).json({ _id: id, name, email, token: generateToken(id) })
     }
     else {
         res.status(400)
@@ -49,14 +49,15 @@ const registerUser = asyncHandler(async (req, res) => {
 const loginUser = asyncHandler(async (req, res) => {
     const { email, password } = req.body;
     const user = await User.findOne({ email })
-    if (user && (await bcrypt.compare(password, user.password))){
+    if (user && (await bcrypt.compare(password, user.password))) {
         res.status(200).json({
             _id: user.id,
             name: user.name,
-            email: user.email
+            email: user.email,
+            token: generateToken(user.id)
         })
     }
-    else{
+    else {
         res.status(400).json({ message: 'auth arror' })
 
     }
@@ -64,10 +65,15 @@ const loginUser = asyncHandler(async (req, res) => {
 
 // @desc    get user data
 // @route   GET /api/users/me
-// @access  Public
+// @access  Private
 const getMe = asyncHandler(async (req, res) => {
-    res.status(200).json({ message: 'user data display' })
+    res.status(200).json({ user: req.user })
 })
 
+const generateToken = (id) => {
+    return jwt.sign({ id }, process.env.JWT_SECRET, {
+        expiresIn: '90d',
+    })
+}
 
 export { registerUser, loginUser, getMe }
